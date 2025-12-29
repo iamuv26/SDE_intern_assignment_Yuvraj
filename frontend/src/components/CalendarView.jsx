@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight, Search, Plus, Calendar as CalendarIcon } from 'lucide-react';
 import { format, addDays, subDays, isSameDay, parseISO, startOfToday, isAfter, isBefore } from 'date-fns';
-import { getAppointments, createAppointment, updateAppointmentStatus } from '../api/appointmentService';
+import { getAppointments, createAppointment, updateAppointmentStatus, deleteAppointment } from '../api/appointmentService';
 import AppointmentCard from './AppointmentCard';
 import NewAppointmentModal from './NewAppointmentModal';
 import clsx from 'clsx';
@@ -9,7 +9,7 @@ import clsx from 'clsx';
 const CalendarView = () => {
     const [currentDate, setCurrentDate] = useState(startOfToday());
     const [appointments, setAppointments] = useState([]);
-    const [activeTab, setActiveTab] = useState('Today'); // Today, Upcoming, Past
+    const [activeTab, setActiveTab] = useState('Today');
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [loading, setLoading] = useState(false);
 
@@ -21,25 +21,16 @@ const CalendarView = () => {
     const fetchData = async () => {
         setLoading(true);
         try {
-            // In a real app, we'd pass filters to the backend. 
-            // Here we fetch all (simulated) and filter client-side for the 'Upcoming/Past' tabs 
-            // to support the specific assignment requirements while keeping the backend simple.
-
-            // However, strictly following the "Call ... passing selectedDate" rule:
             let filters = {};
             if (activeTab === 'Today') {
                 filters.date = format(currentDate, 'yyyy-MM-dd');
             }
-
-            // For logic simplicity in this demo, let's get all appointment for the "List" tabs (Upcoming/Past)
-            // and Specific Date for the "Today/Calendar" view.
 
             let allAppointments = await getAppointments({});
 
             let filtered = allAppointments;
 
             if (activeTab === 'Today') {
-                // The 'Today' tab actually acts as "Selected Date" view in this context
                 filtered = allAppointments.filter(a => a.date === format(currentDate, 'yyyy-MM-dd'));
             } else if (activeTab === 'Upcoming') {
                 filtered = allAppointments.filter(a => isAfter(parseISO(a.date), startOfToday()));
@@ -47,7 +38,6 @@ const CalendarView = () => {
                 filtered = allAppointments.filter(a => isBefore(parseISO(a.date), startOfToday()));
             }
 
-            // Sort by time
             filtered.sort((a, b) => a.time.localeCompare(b.time));
 
             setAppointments(filtered);
@@ -60,25 +50,31 @@ const CalendarView = () => {
 
     const handleDateChange = (days) => {
         setCurrentDate(curr => addDays(curr, days));
-        if (activeTab !== 'Today') setActiveTab('Today'); // Switch back to day view on nav
+        if (activeTab !== 'Today') setActiveTab('Today');
     };
+
 
     const handleCreate = async (data) => {
         await createAppointment(data);
-        fetchData(); // Refresh
+        fetchData();
     };
 
     const handleStatusUpdate = async (id, status) => {
-        // Optimistic UI update could be done here, but sticking to "Update... and refresh"
         await updateAppointmentStatus(id, status);
         fetchData();
     };
 
-    const timeSlots = Array.from({ length: 13 }, (_, i) => i + 7); // 7 AM to 7 PM
+    const handleDelete = async (id) => {
+        if (confirm('Are you sure you want to delete this appointment?')) {
+            await deleteAppointment(id);
+            fetchData();
+        }
+    };
+
+    const timeSlots = Array.from({ length: 13 }, (_, i) => i + 7);
 
     return (
         <div className="flex-1 min-h-screen bg-gray-50 p-4 md:p-8 ml-16 md:ml-20">
-            {/* Header Area */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
                 <div>
                     <h1 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
@@ -122,15 +118,16 @@ const CalendarView = () => {
                 </div>
             </div>
 
-            {/* Tabs */}
+
+
             <div className="flex items-center gap-6 border-b border-gray-200 mb-6">
                 {['Today', 'Upcoming', 'Past'].map(tab => (
                     <button
                         key={tab}
                         onClick={() => setActiveTab(tab)}
                         className={`pb-3 text-sm font-medium transition-colors relative ${activeTab === tab
-                                ? 'text-primary'
-                                : 'text-gray-500 hover:text-gray-700'
+                            ? 'text-primary'
+                            : 'text-gray-500 hover:text-gray-700'
                             }`}
                     >
                         {tab}
@@ -141,17 +138,13 @@ const CalendarView = () => {
                 ))}
             </div>
 
-            {/* Content Area */}
             <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
 
-                {/* Main Schedule (Grid or List based on tab) */}
                 <div className="lg:col-span-3 bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex flex-col min-h-[600px]">
 
                     {activeTab === 'Today' ? (
-                        /* Time Grid View for Today */
                         <div className="flex-1 overflow-y-auto relative no-scrollbar p-6">
 
-                            {/* Grid Lines */}
                             <div className="relative">
                                 {timeSlots.map(hour => (
                                     <div key={hour} className="flex items-start h-24 border-b border-gray-50 last:border-0 group">
@@ -162,12 +155,11 @@ const CalendarView = () => {
                                     </div>
                                 ))}
 
-                                {/* Absolute Positioned Events */}
                                 {appointments.map(apt => {
                                     const [hours, minutes] = apt.time.split(':').map(Number);
-                                    if (hours < 7 || hours > 19) return null; // Out of view
+                                    if (hours < 7 || hours > 19) return null;
 
-                                    const topOffset = (hours - 7) * 96 + (minutes / 60) * 96; // 96px per hour
+                                    const topOffset = (hours - 7) * 96 + (minutes / 60) * 96;
                                     const height = (apt.duration / 60) * 96;
 
                                     return (
@@ -200,7 +192,6 @@ const CalendarView = () => {
                             )}
                         </div>
                     ) : (
-                        /* List View for Upcoming/Past */
                         <div className="p-6 overflow-y-auto max-h-[700px]">
                             {appointments.length > 0 ? (
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -209,6 +200,7 @@ const CalendarView = () => {
                                             key={apt.id}
                                             appointment={apt}
                                             onStatusUpdate={handleStatusUpdate}
+                                            onDelete={handleDelete}
                                         />
                                     ))}
                                 </div>
@@ -221,9 +213,7 @@ const CalendarView = () => {
                     )}
                 </div>
 
-                {/* Right Side Panel: Details or Mini Calendar */}
                 <div className="lg:col-span-1 space-y-6">
-                    {/* Active Doctor Stats (Mock) */}
                     <div className="bg-gradient-to-br from-primary to-blue-600 rounded-2xl p-6 text-white shadow-lg shadow-blue-500/20">
                         <h3 className="text-white/80 font-medium mb-1">Total Appointments</h3>
                         <div className="text-4xl font-bold mb-4">{appointments.length}</div>
@@ -232,7 +222,6 @@ const CalendarView = () => {
                         </div>
                     </div>
 
-                    {/* Up Next / Timeline */}
                     <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
                         <h3 className="font-semibold text-gray-800 mb-4">Quick Timeline</h3>
                         <div className="space-y-4">
@@ -259,7 +248,7 @@ const CalendarView = () => {
                 onClose={() => setIsModalOpen(false)}
                 onCreate={handleCreate}
             />
-        </div>
+        </div >
     );
 };
 

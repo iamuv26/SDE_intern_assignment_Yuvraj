@@ -1,7 +1,7 @@
 import React from 'react';
-import { Clock, Video, Phone, MapPin } from 'lucide-react';
+import { Clock, Video, Phone, MapPin, Trash2 } from 'lucide-react';
 
-const AppointmentCard = ({ appointment, onClick, onStatusUpdate }) => {
+const AppointmentCard = ({ appointment, onClick, onStatusUpdate, onDelete }) => {
     const { patientName, time, duration, status, mode, type } = appointment;
 
     // Status Colors
@@ -24,12 +24,12 @@ const AppointmentCard = ({ appointment, onClick, onStatusUpdate }) => {
         <div
             onClick={onClick}
             className={`
-        p-4 rounded-xl border border-l-4 shadow-sm hover:shadow-md transition-all cursor-pointer bg-white mb-3
-        ${status === 'Upcoming' ? 'border-l-primary' : ''}
-        ${status === 'Scheduled' ? 'border-l-secondary' : ''}
-        ${status === 'Completed' ? 'border-l-green-500' : ''}
-        ${status === 'Cancelled' ? 'border-l-red-500' : ''}
-      `}
+                p-4 rounded-xl border border-l-4 shadow-sm hover:shadow-md transition-all cursor-pointer bg-white mb-3
+                ${status === 'Upcoming' ? 'border-l-primary' : ''}
+                ${status === 'Scheduled' ? 'border-l-secondary' : ''}
+                ${status === 'Completed' ? 'border-l-green-500' : ''}
+                ${status === 'Cancelled' ? 'border-l-red-500' : ''}
+            `}
         >
             <div className="flex justify-between items-start mb-2">
                 <h4 className="font-semibold text-gray-800">{patientName}</h4>
@@ -55,10 +55,19 @@ const AppointmentCard = ({ appointment, onClick, onStatusUpdate }) => {
 
             {/* Quick Actions (Hover) */}
             <div className="mt-3 pt-3 border-t border-gray-100 flex gap-2 justify-end">
+                {onDelete && (
+                    <button
+                        onClick={(e) => { e.stopPropagation(); onDelete(appointment.id); }}
+                        className="text-gray-400 hover:text-red-500 p-1"
+                        title="Delete"
+                    >
+                        <Trash2 size={14} />
+                    </button>
+                )}
                 {status !== 'Cancelled' && status !== 'Completed' && (
                     <button
                         onClick={(e) => { e.stopPropagation(); onStatusUpdate(appointment.id, 'Cancelled'); }}
-                        className="text-xs text-red-500 hover:text-red-700"
+                        className="text-xs text-red-500 hover:text-red-700 font-medium"
                     >
                         Cancel
                     </button>

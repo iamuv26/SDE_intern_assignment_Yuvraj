@@ -1,72 +1,107 @@
-# Appointment Management System - SDE Intern Assignment
+Appointment Management System
 
-This project implements functionality for an EMR Appointment Management System, featuring a React Frontend and a Python Backend service.
+SDE Intern Assignment
 
-## Project Structure
+This project implements a simplified EMR Appointment Management System with a React-based frontend and a Python backend service. The focus is on clean logic, clear separation of concerns, and realistic system design choices rather than production infrastructure.
 
-```
+Overview
+
+The system allows managing medical appointments with basic CRUD functionality and conflict handling. It is split into two logical parts:
+
+Backend (Python): Implements the core appointment logic and acts as the canonical source of truth.
+
+Frontend (React + Vite): Provides an interactive UI for visualizing and managing appointments.
+
+The project is intentionally lightweight and avoids unnecessary frameworks to keep the logic transparent and easy to evaluate.
+
+Project Structure
 SDE_Intern_Assignment/
-├── appointment_service.py    # Backend Logic (Python)
-├── test_backend.py          # Backend Unit Tests
-├── frontend/                # React Application (Vite)
+├── appointment_service.py      # Core backend logic (Python)
+├── test_backend.py             # Unit tests for backend logic
+├── frontend/                   # React application (Vite)
 │   ├── src/
 │   │   ├── api/
-│   │   │   └── appointmentService.js  # Simulated Frontend API
+│   │   │   └── appointmentService.js   # Frontend logic mirror
 │   │   ├── components/
-│   │   │   ├── CalendarView.jsx       # Main Calendar Logic
-│   │   │   ├── AppointmentCard.jsx    # UI Component
-│   │   │   ├── Sidebar.jsx            # Navigation
-│   │   │   └── NewAppointmentModal.jsx # Creation Form
+│   │   │   ├── CalendarView.jsx
+│   │   │   ├── AppointmentCard.jsx
+│   │   │   ├── Sidebar.jsx
+│   │   │   └── NewAppointmentModal.jsx
 │   │   └── App.jsx
 │   └── vite.config.js
-```
 
-## Setup Instructions
+Backend (Python)
+Design
 
-### Backend (Python)
-The backend logic is contained in `appointment_service.py`. It uses in-memory dictionaries to mock a database.
+Uses in-memory data structures to simulate persistence.
 
-1.  **Run Tests**:
-    ```bash
-    python test_backend.py
-    ```
-    This verifies the CRUD operations using the Python service directly.
+Implements appointment creation, updates, deletion, and conflict validation.
 
-### Frontend (React + Vite)
-The frontend is a modern React application styled with Tailwind CSS v4.
+Designed to be easily portable to a real database-backed API.
 
-1.  **Navigate to folder**:
-    ```bash
-    cd frontend
-    ```
-2.  **Install Dependencies**:
-    ```bash
-    npm install
-    ```
-3.  **Run Development Server**:
-    ```bash
-    npm run dev
-    ```
-4.  **Open in Browser**:
-    Usually http://localhost:5173 (or port shown in terminal).
+File
 
-## Design Decisions
+appointment_service.py contains all backend logic.
 
-### Data Layer
-- **Consistency**: In a real system, consistency is enforced via database transactions (ACID) and unique constraints (e.g., PostgreSQL `EXCLUDE` constraints for time ranges).
-- **Mocking**: The Python backend uses a global list `MOCK_APPOINTMENTS` to simulate persistence during the runtime of the script.
-- **Frontend-Backend Bridge**: To satisfy the requirement of specific Python functions while building a functional React App without setting up a full Flask/FastAPI server, the frontend uses a **mirrored Logic Layer** (`appointmentService.js`). This allows the UI to function interactively for the demo, while the *canonical* logic resides in `appointment_service.py` as requested.
+test_backend.py validates core behavior through unit tests.
 
-### Frontend Architecture
-- **Missing File**: The original `EMR_Frontend_Assignment.jsx` was not found. A robust `CalendarView.jsx` was built from scratch to match the provided UI mockups.
-- **Styling**: Used Tailwind CSS v4 for a premium, clean look matching the "Medical SaaS" aesthetic.
-- **Components**: Modularized into Sidebar, CalendarView, and Cards for maintainability.
+Running Backend Tests
+python test_backend.py
 
-## API Contract (GraphQL Style)
+Frontend (React + Vite)
+Design
 
-The `get_appointments` function is designed to support flexible filtering, similar to a GraphQL Query:
+Built using React with Vite for fast development.
 
-```graphql
+Styled using Tailwind CSS for a clean, modern “Medical SaaS” look.
+
+Component-based architecture for maintainability.
+
+Frontend–Backend Bridge
+
+To keep the frontend fully interactive without setting up a Flask/FastAPI server, the frontend uses a mirrored logic layer (appointmentService.js) that reflects the behavior of the Python backend.
+
+The Python service remains the canonical implementation, while the frontend mirror exists purely for demonstration and UI interaction.
+
+Running the Frontend
+cd frontend
+npm install
+npm run dev
+
+
+Open the URL shown in the terminal (usually http://localhost:5173).
+
+Design Decisions
+Why No API Server?
+
+The assignment focuses on logic and reasoning, not infrastructure.
+
+Avoids boilerplate HTTP setup while keeping core logic testable and clear.
+
+Data Consistency
+
+In a production system, this would be enforced using:
+
+Database transactions (ACID)
+
+Unique constraints or exclusion constraints for time ranges
+
+Here, conflict checks are handled directly in the service logic.
+
+Extensibility
+
+This structure allows easy extension to:
+
+REST or GraphQL APIs
+
+Persistent databases (PostgreSQL, MySQL)
+
+Authentication and role-based access
+
+Conceptual API Contract (GraphQL-style)
+
+The backend logic is designed to support flexible filtering, similar to a GraphQL query:
+
 query GetAppointments($date: String, $status: AppointmentStatus) {
   appointments(date: $date, status: $status) {
     id
@@ -76,4 +111,9 @@ query GetAppointments($date: String, $status: AppointmentStatus) {
     status
   }
 }
-```
+
+Notes
+
+This project prioritizes clarity, correctness, and reasoning over production completeness.
+
+All core logic is intentionally kept readable for review purposes.

@@ -81,10 +81,9 @@ const INITIAL_APPOINTMENTS = [
     },
 ];
 
-// Helper to simulate network delay
+
 const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
-// Load from local storage or init
 const loadAppointments = () => {
     const stored = localStorage.getItem('appointments');
     return stored ? JSON.parse(stored) : INITIAL_APPOINTMENTS;
@@ -94,8 +93,9 @@ const saveAppointments = (apts) => {
     localStorage.setItem('appointments', JSON.stringify(apts));
 };
 
+
 export const getAppointments = async (filters = {}) => {
-    await delay(300); // Simulate network
+    await delay(300);
     let apts = loadAppointments();
 
     if (filters.date) {
@@ -106,6 +106,13 @@ export const getAppointments = async (filters = {}) => {
     }
     if (filters.doctorName) {
         apts = apts.filter(a => a.doctorName === filters.doctorName);
+    }
+    if (filters.search) {
+        const lowerQ = filters.search.toLowerCase();
+        apts = apts.filter(a =>
+            a.patientName.toLowerCase().includes(lowerQ) ||
+            a.doctorName.toLowerCase().includes(lowerQ)
+        );
     }
 
     return apts;
@@ -121,7 +128,6 @@ export const createAppointment = async (payload) => {
     await delay(300);
     const apts = loadAppointments();
 
-    // Overlap Detection
     const { start: newStart, end: newEnd } = getEndTime(payload.date, payload.time, parseInt(payload.duration));
 
     const doctorApts = apts.filter(a => a.doctorName === payload.doctorName && a.date === payload.date && a.status !== 'Cancelled');
@@ -159,17 +165,25 @@ export const updateAppointmentStatus = async (id, newStatus) => {
     return null;
 };
 
+export const deleteAppointment = async (id) => {
+    await delay(200);
+    let apts = loadAppointments();
+    const newApts = apts.filter(a => a.id !== id);
+    saveAppointments(newApts);
+    return true;
+};
+
+
 export const getDashboardStats = async () => {
-    // Simulated Delay
     await new Promise(resolve => setTimeout(resolve, 300));
     return {
-      totalPatients: { value: '2,543', change: '+12.5%', trend: 'up' },
-      appointmentsToday: { value: '87', change: '+8.2%', trend: 'up' },
-      revenue: { value: '₹4.2L', change: '+23.1%', trend: 'up' },
-      activeDoctors: { value: '72/80', change: '-2.4%', trend: 'down' }
+        totalPatients: { value: '2,543', change: '+12.5%', trend: 'up' },
+        appointmentsToday: { value: '87', change: '+8.2%', trend: 'up' },
+        revenue: { value: '₹4.2L', change: '+23.1%', trend: 'up' },
+        activeDoctors: { value: '72/80', change: '-2.4%', trend: 'down' }
     };
 };
-  
+
 export const getActiveDoctors = async () => {
     await new Promise(resolve => setTimeout(resolve, 200));
     return [

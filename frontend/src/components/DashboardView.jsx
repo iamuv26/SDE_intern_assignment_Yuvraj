@@ -10,26 +10,31 @@ const DashboardView = () => {
     const [activeDoctors, setActiveDoctors] = useState([]);
     const [todaysAppointments, setTodaysAppointments] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [searchQuery, setSearchQuery] = useState('');
+
+    const fetchData = async () => {
+        try {
+            const [statsData, docsData, apptsData] = await Promise.all([
+                getDashboardStats(),
+                getActiveDoctors(),
+                getAppointments({ date: '2025-11-06', search: searchQuery })
+            ]);
+            setStats(statsData);
+            setActiveDoctors(docsData);
+            setTodaysAppointments(apptsData.slice(0, 4));
+        } catch (error) {
+            console.error("Failed to load dashboard data", error);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     useEffect(() => {
-        const fetchData = async () => {
-            try {
-                const [statsData, docsData, apptsData] = await Promise.all([
-                    getDashboardStats(),
-                    getActiveDoctors(),
-                    getAppointments({ date: '2025-11-06' }) // Mocking "Today" as Nov 6
-                ]);
-                setStats(statsData);
-                setActiveDoctors(docsData);
-                setTodaysAppointments(apptsData.slice(0, 4)); // Show top 4
-            } catch (error) {
-                console.error("Failed to load dashboard data", error);
-            } finally {
-                setLoading(false);
-            }
-        };
-        fetchData();
-    }, []);
+        const timeoutId = setTimeout(() => {
+            fetchData();
+        }, 300);
+        return () => clearTimeout(timeoutId);
+    }, [searchQuery]);
 
     if (loading || !stats) {
         return <div className="p-8 ml-16 md:ml-20 flex justify-center text-gray-400">Loading Dashboard...</div>;
@@ -38,18 +43,23 @@ const DashboardView = () => {
     return (
         <div className="flex-1 min-h-screen bg-gray-50 p-4 md:p-8 ml-16 md:ml-20">
 
-            {/* Header */}
             <div className="flex justify-between items-center mb-8">
                 <div>
                     <h1 className="text-2xl font-bold text-gray-800">Dashboard</h1>
                     <p className="text-gray-500 text-sm mt-1">Welcome back, Dr. Sarah Johnson</p>
                 </div>
                 <div className="flex gap-2">
-                    <input placeholder="Search patients..." className="bg-white border-none rounded-xl px-4 py-2 text-sm shadow-sm w-64" />
+                    <input
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        placeholder="Search patients..."
+                        className="bg-white border-none rounded-xl px-4 py-2 text-sm shadow-sm w-64 ring-1 ring-gray-100 focus:ring-2 focus:ring-primary/20 outline-none"
+                    />
                 </div>
             </div>
 
-            {/* Stats Row */}
+
+
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
                 <StatCard
                     icon={Users}
@@ -85,13 +95,10 @@ const DashboardView = () => {
                 />
             </div>
 
-            {/* Main Content Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
-                {/* Left Column: Quick Actions & Appointments */}
                 <div className="lg:col-span-2 space-y-8">
 
-                    {/* Quick Actions */}
                     <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
                         <h3 className="font-semibold text-gray-800 mb-4">Quick Actions</h3>
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -102,7 +109,6 @@ const DashboardView = () => {
                         </div>
                     </div>
 
-                    {/* Today's Appointments List */}
                     <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
                         <div className="flex justify-between items-center mb-6">
                             <h3 className="font-semibold text-gray-800">Today's Appointments</h3>
@@ -137,13 +143,11 @@ const DashboardView = () => {
                     </div>
                 </div>
 
-                {/* Right Column: Active Doctors & Alerts */}
                 <div className="space-y-8">
                     <div className="h-[400px]">
                         <ActiveDoctors doctors={activeDoctors} />
                     </div>
 
-                    {/* Department Overview (Mock) */}
                     <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
                         <h3 className="font-semibold text-gray-800 mb-4">Department Overview</h3>
                         <div className="space-y-4">
